@@ -72,11 +72,11 @@ class Payment extends Model
     {
         $amountChargedBack = $payment->amountChargedBack
             ? mollie_object_to_money($payment->amountChargedBack)
-            : money(0, $payment->amount->currency);
+            : mollie_money(0, $payment->amount->currency);
 
         $amountRefunded = $payment->amountRefunded
             ? mollie_object_to_money($payment->amountRefunded)
-            : money(0, $payment->amount->currency);
+            : mollie_money(0, $payment->amount->currency);
 
         $localActions = ! empty($actions) ? $actions : $payment->metadata->actions ?? null;
 

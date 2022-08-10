@@ -341,14 +341,14 @@ class ManageSubscriptionTest extends BaseTestCase
     protected function withMockedGetMollieMethodMinimumAmount($times = 1): void
     {
         $this->mock(GetMollieMethodMinimumAmount::class, function ($mock) use ($times) {
-            return $mock->shouldReceive('execute')->with('directdebit', 'EUR')->times($times)->andReturn(money(100, 'EUR'));
+            return $mock->shouldReceive('execute')->with('directdebit', 'EUR')->times($times)->andReturn(mollie_money(100, 'EUR'));
         });
     }
 
     protected function withMockedGetMollieMethodMaximumAmount($times = 1): void
     {
         $this->mock(GetMollieMethodMaximumAmount::class, function ($mock) use ($times) {
-            return $mock->shouldReceive('execute')->with('directdebit', 'EUR')->times($times)->andReturn(money(30000, 'EUR'));
+            return $mock->shouldReceive('execute')->with('directdebit', 'EUR')->times($times)->andReturn(mollie_money(30000, 'EUR'));
         });
     }
 

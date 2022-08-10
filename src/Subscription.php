@@ -692,7 +692,7 @@ class Subscription extends Model implements InteractsWithOrderItems, Preprocesse
      */
     protected function reimbursableAmount()
     {
-        $zeroAmount = \money('0.00', $this->currency);
+        $zeroAmount = \mollie_money('0.00', $this->currency);
 
         // Determine base amount eligible to reimburse
         $latestProcessedOrderItem = $this->latestProcessedOrderItem();

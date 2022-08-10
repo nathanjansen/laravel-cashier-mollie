@@ -302,8 +302,8 @@ class CashierTest extends BaseTestCase
     /** @test */
     public function testFormatAmount()
     {
-        $this->assertEquals('1.000,00 €', Cashier::formatAmount(money(100000, 'EUR')));
-        $this->assertEquals('-9.123,45 €', Cashier::formatAmount(money(-912345, 'EUR')));
+        $this->assertEquals('1.000,00 €', Cashier::formatAmount(mollie_money(100000, 'EUR')));
+        $this->assertEquals('-9.123,45 €', Cashier::formatAmount(mollie_money(-912345, 'EUR')));
     }
 
     /**
@@ -415,14 +415,14 @@ class CashierTest extends BaseTestCase
     protected function withMockedGetMollieMethodMinimumAmount($times = 1): void
     {
         $this->mock(GetMollieMethodMinimumAmount::class, function ($mock) use ($times) {
-            return $mock->shouldReceive('execute')->with('directdebit', 'EUR')->times($times)->andReturn(money(100, 'EUR'));
+            return $mock->shouldReceive('execute')->with('directdebit', 'EUR')->times($times)->andReturn(mollie_money(100, 'EUR'));
         });
     }
 
     protected function withMockedGetMollieMethodMaximumAmount($times = 1): void
     {
         $this->mock(GetMollieMethodMaximumAmount::class, function ($mock) use ($times) {
-            return $mock->shouldReceive('execute')->with('directdebit', 'EUR')->times($times)->andReturn(money(30000, 'EUR'));
+            return $mock->shouldReceive('execute')->with('directdebit', 'EUR')->times($times)->andReturn(mollie_money(30000, 'EUR'));
         });
     }
 

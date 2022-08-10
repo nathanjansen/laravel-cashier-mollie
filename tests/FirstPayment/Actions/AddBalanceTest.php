@@ -16,7 +16,7 @@ class AddBalanceTest extends BaseTestCase
         $this->withPackageMigrations();
         $action = new AddBalance(
             $this->getMandatedUser(),
-            money(1000, 'EUR'),
+            mollie_money(1000, 'EUR'),
             1,
             'Adding some test balance'
         );
@@ -64,7 +64,7 @@ class AddBalanceTest extends BaseTestCase
 
         $action = new AddBalance(
             $user,
-            money(1000, 'EUR'),
+            mollie_money(1000, 'EUR'),
             1,
             'Adding some test balance'
         );

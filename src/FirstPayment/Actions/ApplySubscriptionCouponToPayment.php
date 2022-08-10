@@ -57,6 +57,6 @@ class ApplySubscriptionCouponToPayment extends BaseNullAction
      */
     protected function toMoney($value = 0)
     {
-        return money($value, $this->getCurrency());
+        return mollie_money($value, $this->getCurrency());
     }
 }

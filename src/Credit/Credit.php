@@ -55,13 +55,13 @@ class Credit extends Model
             $credit = static::whereOwner($owner)->whereCurrency($amount->getCurrency()->getCode())->firstOrCreate([]);
 
             if ($credit->value == 0) {
-                return money(0, $amount->getCurrency()->getCode());
+                return mollie_money(0, $amount->getCurrency()->getCode());
             }
 
             $use_credit = min([$credit->value, (int) $amount->getAmount()]);
             $credit->decrement('value', $use_credit);
 
-            return money($use_credit, $amount->getCurrency()->getCode());
+            return mollie_money($use_credit, $amount->getCurrency()->getCode());
         });
     }
 
@@ -72,6 +72,6 @@ class Credit extends Model
      */
     public function money()
     {
-        return money($this->value, $this->currency);
+        return mollie_money($this->value, $this->currency);
     }
 }

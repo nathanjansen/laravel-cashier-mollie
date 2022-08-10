@@ -35,12 +35,12 @@ class FirstPaymentChargeBuilderTest extends BaseTestCase
         $this->assertEquals(0, $owner->orders()->count());
 
         $item = new \Laravel\Cashier\Charge\ChargeItemBuilder($owner);
-        $item->unitPrice(money(100, 'EUR'));
+        $item->unitPrice(mollie_money(100, 'EUR'));
         $item->description('Test Item');
         $chargeItem = $item->make();
 
         $item2 = new \Laravel\Cashier\Charge\ChargeItemBuilder($owner);
-        $item2->unitPrice(money(200, 'EUR'));
+        $item2->unitPrice(mollie_money(200, 'EUR'));
         $item2->description('Test Item 2');
         $chargeItem2 = $item2->make();
 

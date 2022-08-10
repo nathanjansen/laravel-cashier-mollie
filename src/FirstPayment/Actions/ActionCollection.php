@@ -32,7 +32,7 @@ class ActionCollection extends Collection
      */
     public function total()
     {
-        $total = money(0, $this->getCurrency());
+        $total = mollie_money(0, $this->getCurrency());
 
         $this->each(function (BaseAction $item) use (&$total) {
             $total = $total->add($item->getTotal());

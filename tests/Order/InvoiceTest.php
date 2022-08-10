@@ -130,7 +130,7 @@ class InvoiceTest extends BaseTestCase
         $this->assertMoneyEURCents(0, $invoice->rawStartingBalance());
         $this->assertEquals('0,00 €', $invoice->startingBalance());
 
-        $invoice = $invoice->setStartingBalance(money(1525, 'EUR'));
+        $invoice = $invoice->setStartingBalance(mollie_money(1525, 'EUR'));
         $this->assertTrue($invoice->hasStartingBalance());
         $this->assertMoneyEURCents(1525, $invoice->rawStartingBalance());
         $this->assertEquals('15,25 €', $invoice->startingBalance());
@@ -143,7 +143,7 @@ class InvoiceTest extends BaseTestCase
         $this->assertMoneyEURCents(0, $invoice->rawCompletedBalance());
         $this->assertEquals('0,00 €', $invoice->completedBalance());
 
-        $invoice = $invoice->setCompletedBalance(money(1525, 'EUR'));
+        $invoice = $invoice->setCompletedBalance(mollie_money(1525, 'EUR'));
         $this->assertMoneyEURCents(1525, $invoice->rawCompletedBalance());
         $this->assertEquals('15,25 €', $invoice->completedBalance());
     }
@@ -155,7 +155,7 @@ class InvoiceTest extends BaseTestCase
         $this->assertMoneyEURCents(0, $invoice->rawUsedBalance());
         $this->assertEquals('0,00 €', $invoice->usedBalance());
 
-        $invoice = $invoice->setUsedBalance(money(1525, 'EUR'));
+        $invoice = $invoice->setUsedBalance(mollie_money(1525, 'EUR'));
         $this->assertMoneyEURCents(1525, $invoice->rawUsedBalance());
         $this->assertEquals('15,25 €', $invoice->usedBalance());
     }

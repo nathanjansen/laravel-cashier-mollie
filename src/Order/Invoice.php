@@ -201,7 +201,7 @@ class Invoice
      */
     public function rawSubtotal()
     {
-        $subtotal = money(0, $this->currency);
+        $subtotal = mollie_money(0, $this->currency);
 
         $this->items->each(function (InvoicableItem $item) use (&$subtotal) {
             $subtotal = $subtotal->add($item->getSubtotal());
@@ -227,7 +227,7 @@ class Invoice
      */
     public function rawTotal()
     {
-        $subtotal = money(0, $this->currency);
+        $subtotal = mollie_money(0, $this->currency);
 
         $this->items->each(function (InvoicableItem $item) use (&$subtotal) {
             $subtotal = $subtotal->add($item->getTotal());
@@ -279,9 +279,9 @@ class Invoice
             return [
                 'tax_percentage' => (float) $percentage,
                 'raw_over_subtotal' => $raw_over_subtotal,
-                'over_subtotal' => $this->formatAmount(money($raw_over_subtotal, $this->currency)),
+                'over_subtotal' => $this->formatAmount(mollie_money($raw_over_subtotal, $this->currency)),
                 'raw_total' => $raw_total,
-                'total' => $this->formatAmount(money($raw_total, $this->currency)),
+                'total' => $this->formatAmount(mollie_money($raw_total, $this->currency)),
             ];
         };
 
@@ -330,7 +330,7 @@ class Invoice
      */
     public function rawStartingBalance()
     {
-        return $this->startingBalance ?: money(0, $this->currency);
+        return $this->startingBalance ?: mollie_money(0, $this->currency);
     }
 
     /**
@@ -361,7 +361,7 @@ class Invoice
      */
     public function rawUsedBalance()
     {
-        return $this->usedBalance ?: money(0, $this->currency);
+        return $this->usedBalance ?: mollie_money(0, $this->currency);
     }
 
     /**
@@ -392,7 +392,7 @@ class Invoice
      */
     public function rawCompletedBalance()
     {
-        return $this->completedBalance ?: money(0, $this->currency);
+        return $this->completedBalance ?: mollie_money(0, $this->currency);
     }
 
     /**

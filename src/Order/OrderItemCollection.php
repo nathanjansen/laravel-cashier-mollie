@@ -169,7 +169,7 @@ class OrderItemCollection extends Collection
             throw new LogicException('Calculating the total requires items to be of the same currency.');
         }
 
-        return money($this->sum('total'), $this->currency());
+        return mollie_money($this->sum('total'), $this->currency());
     }
 
     public function currency(): string
