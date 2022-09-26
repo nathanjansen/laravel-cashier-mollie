@@ -17,7 +17,7 @@ class AddGenericOrderItemTest extends BaseTestCase
 
         $action = new AddGenericOrderItem(
             $this->getMandatedUser(true, ['tax_percentage' => 20]),
-            money(5, 'EUR'),
+            mollie_money(5, 'EUR'),
             1,
             'Adding a test order item'
         );
@@ -82,7 +82,7 @@ class AddGenericOrderItemTest extends BaseTestCase
 
         $action = new AddGenericOrderItem(
             $user,
-            money(5, 'EUR'),
+            mollie_money(5, 'EUR'),
             1,
             'Adding a test order item'
         );

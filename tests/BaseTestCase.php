@@ -374,7 +374,7 @@ abstract class BaseTestCase extends TestCase
     {
         $this->assertEquals($currency, $money->getCurrency()->getCode());
         $this->assertEquals($money->getAmount(), $value);
-        $this->assertTrue(money($value, $currency)->equals($money));
+        $this->assertTrue(mollie_money($value, $currency)->equals($money));
     }
 
     /**

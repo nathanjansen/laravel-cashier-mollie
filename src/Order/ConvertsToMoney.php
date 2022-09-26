@@ -10,6 +10,6 @@ trait ConvertsToMoney
      */
     protected function toMoney($value = 0)
     {
-        return money(round($value), $this->getCurrency());
+        return mollie_money(round($value), $this->getCurrency());
     }
 }

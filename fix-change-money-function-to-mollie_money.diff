@@ -1,0 +1,701 @@
+diff --git a/docs/04-charges.md b/docs/04-charges.md
+index 80a2e58..6d4e7aa 100644
+--- a/docs/04-charges.md
++++ b/docs/04-charges.md
+@@ -17,12 +17,12 @@ use App\Models\User;
+ $user = App\User::find(1);
+ 
+ $item = new \Laravel\Cashier\Charge\ChargeItemBuilder($user);
+-$item->unitPrice(money(100,'EUR')); //1 EUR
++$item->unitPrice(mollie_money(100,'EUR')); //1 EUR
+ $item->description('Test Item 1');
+ $chargeItem = $item->make();
+ 
+ $item2 = new \Laravel\Cashier\Charge\ChargeItemBuilder($user);
+-$item2->unitPrice(money(200,'EUR'));
++$item2->unitPrice(mollie_money(200,'EUR'));
+ $item2->description('Test Item 2');
+ $chargeItem2 = $item2->make();
+ 
+diff --git a/docs/06-customer.md b/docs/06-customer.md
+index ee92184..a9c9101 100644
+--- a/docs/06-customer.md
++++ b/docs/06-customer.md
+@@ -40,7 +40,7 @@ __Use these with care:__
+ 
+ ```php
+ $credit = $user->credit('EUR');
+-$user->addCredit(money(10, 'EUR')); // add €10.00
++$user->addCredit(mollie_money(10, 'EUR')); // add €10.00
+ $user->hasCredit('EUR');
+ ```
+ 
+diff --git a/src/Credit/Credit.php b/src/Credit/Credit.php
+index 212cd74..57646c2 100644
+--- a/src/Credit/Credit.php
++++ b/src/Credit/Credit.php
+@@ -55,13 +55,13 @@ public static function maxOutForOwner(Model $owner, Money $amount)
+             $credit = static::whereOwner($owner)->whereCurrency($amount->getCurrency()->getCode())->firstOrCreate([]);
+ 
+             if ($credit->value == 0) {
+-                return money(0, $amount->getCurrency()->getCode());
++                return mollie_money(0, $amount->getCurrency()->getCode());
+             }
+ 
+             $use_credit = min([$credit->value, (int) $amount->getAmount()]);
+             $credit->decrement('value', $use_credit);
+ 
+-            return money($use_credit, $amount->getCurrency()->getCode());
++            return mollie_money($use_credit, $amount->getCurrency()->getCode());
+         });
+     }
+ 
+@@ -72,6 +72,6 @@ public static function maxOutForOwner(Model $owner, Money $amount)
+      */
+     public function money()
+     {
+-        return money($this->value, $this->currency);
++        return mollie_money($this->value, $this->currency);
+     }
+ }
+diff --git a/src/FirstPayment/Actions/ActionCollection.php b/src/FirstPayment/Actions/ActionCollection.php
+index 3c338c8..caca900 100644
+--- a/src/FirstPayment/Actions/ActionCollection.php
++++ b/src/FirstPayment/Actions/ActionCollection.php
+@@ -32,7 +32,7 @@ protected function validate()
+      */
+     public function total()
+     {
+-        $total = money(0, $this->getCurrency());
++        $total = mollie_money(0, $this->getCurrency());
+ 
+         $this->each(function (BaseAction $item) use (&$total) {
+             $total = $total->add($item->getTotal());
+diff --git a/src/FirstPayment/Actions/ApplySubscriptionCouponToPayment.php b/src/FirstPayment/Actions/ApplySubscriptionCouponToPayment.php
+index d72fb4e..1d5fd83 100644
+--- a/src/FirstPayment/Actions/ApplySubscriptionCouponToPayment.php
++++ b/src/FirstPayment/Actions/ApplySubscriptionCouponToPayment.php
+@@ -57,6 +57,6 @@ public function getTax()
+      */
+     protected function toMoney($value = 0)
+     {
+-        return money($value, $this->getCurrency());
++        return mollie_money($value, $this->getCurrency());
+     }
+ }
+diff --git a/src/FirstPayment/Actions/StartSubscription.php b/src/FirstPayment/Actions/StartSubscription.php
+index 1ca690e..f47f98c 100644
+--- a/src/FirstPayment/Actions/StartSubscription.php
++++ b/src/FirstPayment/Actions/StartSubscription.php
+@@ -215,7 +215,7 @@ public function trialDays(int $trialDays)
+     {
+         $this->trialDays = $trialDays;
+         $this->builder()->trialDays($trialDays);
+-        $this->unitPrice = money(0, $this->getCurrency());
++        $this->unitPrice = mollie_money(0, $this->getCurrency());
+ 
+         return $this;
+     }
+@@ -230,7 +230,7 @@ public function trialUntil(Carbon $trialUntil)
+     {
+         $this->trialUntil = $trialUntil;
+         $this->builder()->trialUntil($trialUntil);
+-        $this->unitPrice = money(0, $this->getCurrency());
++        $this->unitPrice = mollie_money(0, $this->getCurrency());
+ 
+         return $this;
+     }
+diff --git a/src/Helpers/helpers.php b/src/Helpers/helpers.php
+index 8fc0f4f..71c7343 100644
+--- a/src/Helpers/helpers.php
++++ b/src/Helpers/helpers.php
+@@ -23,7 +23,7 @@ function object_to_array_recursive($object)
+     }
+ }
+ 
+-if (! function_exists('money')) {
++if (! function_exists('mollie_money')) {
+     /**
+      * Create a Money object from a Mollie Amount array.
+      *
+@@ -31,7 +31,7 @@ function object_to_array_recursive($object)
+      * @param  string  $currency
+      * @return \Money\Money
+      */
+-    function money(int $value, string $currency)
++    function mollie_money(int $value, string $currency)
+     {
+         return new Money($value, new Currency($currency));
+     }
+diff --git a/src/Http/Controllers/AftercareWebhookController.php b/src/Http/Controllers/AftercareWebhookController.php
+index 240a3a3..8c4ebd5 100644
+--- a/src/Http/Controllers/AftercareWebhookController.php
++++ b/src/Http/Controllers/AftercareWebhookController.php
+@@ -80,7 +80,7 @@ protected function handleRefunds(Order $order, MolliePayment $molliePayment)
+             // Update the locally known refunded amount
+             $amountRefunded = $molliePayment->amountRefunded
+                 ? mollie_object_to_money($molliePayment->amountRefunded)
+-                : money(0, $molliePayment->amount->currency);
++                : mollie_money(0, $molliePayment->amount->currency);
+ 
+             $localPayment = Cashier::$paymentModel::findByPaymentId($molliePayment->id);
+             $localPayment->update(['amount_refunded' => (int) $amountRefunded->getAmount()]);
+diff --git a/src/Order/ConvertsToMoney.php b/src/Order/ConvertsToMoney.php
+index b05fa60..675d6a1 100644
+--- a/src/Order/ConvertsToMoney.php
++++ b/src/Order/ConvertsToMoney.php
+@@ -10,6 +10,6 @@ trait ConvertsToMoney
+      */
+     protected function toMoney($value = 0)
+     {
+-        return money(round($value), $this->getCurrency());
++        return mollie_money(round($value), $this->getCurrency());
+     }
+ }
+diff --git a/src/Order/Invoice.php b/src/Order/Invoice.php
+index ddfbd6d..1f817eb 100644
+--- a/src/Order/Invoice.php
++++ b/src/Order/Invoice.php
+@@ -201,7 +201,7 @@ public function subtotal()
+      */
+     public function rawSubtotal()
+     {
+-        $subtotal = money(0, $this->currency);
++        $subtotal = mollie_money(0, $this->currency);
+ 
+         $this->items->each(function (InvoicableItem $item) use (&$subtotal) {
+             $subtotal = $subtotal->add($item->getSubtotal());
+@@ -227,7 +227,7 @@ public function total()
+      */
+     public function rawTotal()
+     {
+-        $subtotal = money(0, $this->currency);
++        $subtotal = mollie_money(0, $this->currency);
+ 
+         $this->items->each(function (InvoicableItem $item) use (&$subtotal) {
+             $subtotal = $subtotal->add($item->getTotal());
+@@ -279,9 +279,9 @@ public function taxDetails()
+             return [
+                 'tax_percentage' => (float) $percentage,
+                 'raw_over_subtotal' => $raw_over_subtotal,
+-                'over_subtotal' => $this->formatAmount(money($raw_over_subtotal, $this->currency)),
++                'over_subtotal' => $this->formatAmount(mollie_money($raw_over_subtotal, $this->currency)),
+                 'raw_total' => $raw_total,
+-                'total' => $this->formatAmount(money($raw_total, $this->currency)),
++                'total' => $this->formatAmount(mollie_money($raw_total, $this->currency)),
+             ];
+         };
+ 
+@@ -330,7 +330,7 @@ public function startingBalance()
+      */
+     public function rawStartingBalance()
+     {
+-        return $this->startingBalance ?: money(0, $this->currency);
++        return $this->startingBalance ?: mollie_money(0, $this->currency);
+     }
+ 
+     /**
+@@ -361,7 +361,7 @@ public function usedBalance()
+      */
+     public function rawUsedBalance()
+     {
+-        return $this->usedBalance ?: money(0, $this->currency);
++        return $this->usedBalance ?: mollie_money(0, $this->currency);
+     }
+ 
+     /**
+@@ -392,7 +392,7 @@ public function completedBalance()
+      */
+     public function rawCompletedBalance()
+     {
+-        return $this->completedBalance ?: money(0, $this->currency);
++        return $this->completedBalance ?: mollie_money(0, $this->currency);
+     }
+ 
+     /**
+diff --git a/src/Order/Order.php b/src/Order/Order.php
+index 773ccb3..ba9ee56 100644
+--- a/src/Order/Order.php
++++ b/src/Order/Order.php
+@@ -208,7 +208,7 @@ public function processPayment()
+                 return $this->handlePaymentFailedDueToInvalidMandate();
+             }
+ 
+-            $totalDue = money($this->total_due, $this->currency);
++            $totalDue = mollie_money($this->total_due, $this->currency);
+ 
+             if ($maximumPaymentAmount && $totalDue->greaterThan($maximumPaymentAmount)) {
+                 $this->items->each(function (OrderItem $item) {
+@@ -231,7 +231,7 @@ public function processPayment()
+                     $this->mollie_payment_id = null;
+ 
+                     // Add credit to the owner's balance
+-                    $credit = Cashier::$creditModel::addAmountForOwner($owner, money(-($this->total_due), $this->currency));
++                    $credit = Cashier::$creditModel::addAmountForOwner($owner, mollie_money(-($this->total_due), $this->currency));
+ 
+                     if (! $owner->hasActiveSubscriptionWithCurrency($this->currency)) {
+                         Event::dispatch(new BalanceTurnedStale($credit));
+@@ -696,7 +696,7 @@ private function ensureValidMandateAndMinimumPaymentAmountWhenTotalDuePositive()
+             $this->guardMandate($mandate);
+             $minimumPaymentAmount = app(MinimumPayment::class)::forMollieMandate($mandate, $this->getCurrency());
+         } else {
+-            $minimumPaymentAmount = money(0, $this->getCurrency());
++            $minimumPaymentAmount = mollie_money(0, $this->getCurrency());
+         }
+ 
+         return $minimumPaymentAmount;
+@@ -715,7 +715,7 @@ private function ensureValidMandateAndMaximumPaymentAmountWhenTotalDuePositive()
+ 
+             $maximumPaymentAmount = app(MaximumPayment::class)::forMollieMandate($mandate, $this->getCurrency());
+         } else {
+-            $maximumPaymentAmount = money(0, $this->getCurrency());
++            $maximumPaymentAmount = mollie_money(0, $this->getCurrency());
+         }
+ 
+         return $maximumPaymentAmount;
+diff --git a/src/Order/OrderItemCollection.php b/src/Order/OrderItemCollection.php
+index 6f54373..69a20de 100644
+--- a/src/Order/OrderItemCollection.php
++++ b/src/Order/OrderItemCollection.php
+@@ -169,7 +169,7 @@ public function getTotal(): Money
+             throw new LogicException('Calculating the total requires items to be of the same currency.');
+         }
+ 
+-        return money($this->sum('total'), $this->currency());
++        return mollie_money($this->sum('total'), $this->currency());
+     }
+ 
+     public function currency(): string
+diff --git a/src/Payment.php b/src/Payment.php
+index 13b6bb8..4760901 100644
+--- a/src/Payment.php
++++ b/src/Payment.php
+@@ -72,11 +72,11 @@ public static function makeFromMolliePayment(MolliePayment $payment, Model $owne
+     {
+         $amountChargedBack = $payment->amountChargedBack
+             ? mollie_object_to_money($payment->amountChargedBack)
+-            : money(0, $payment->amount->currency);
++            : mollie_money(0, $payment->amount->currency);
+ 
+         $amountRefunded = $payment->amountRefunded
+             ? mollie_object_to_money($payment->amountRefunded)
+-            : money(0, $payment->amount->currency);
++            : mollie_money(0, $payment->amount->currency);
+ 
+         $localActions = ! empty($actions) ? $actions : $payment->metadata->actions ?? null;
+ 
+diff --git a/src/Refunds/RefundItemCollection.php b/src/Refunds/RefundItemCollection.php
+index 987cf7b..650c125 100644
+--- a/src/Refunds/RefundItemCollection.php
++++ b/src/Refunds/RefundItemCollection.php
+@@ -23,7 +23,7 @@ public static function makeFromOrderItemCollection(OrderItemCollection $orderIte
+ 
+     public function getTotal(): Money
+     {
+-        return money($this->sum('total'), $this->getCurrency());
++        return mollie_money($this->sum('total'), $this->getCurrency());
+     }
+ 
+     public function getCurrency(): string
+diff --git a/src/Subscription.php b/src/Subscription.php
+index c8db891..1e90003 100644
+--- a/src/Subscription.php
++++ b/src/Subscription.php
+@@ -692,7 +692,7 @@ protected function reimburse(Money $amount, array $overrides = [])
+      */
+     protected function reimbursableAmount()
+     {
+-        $zeroAmount = \money('0.00', $this->currency);
++        $zeroAmount = \mollie_money('0.00', $this->currency);
+ 
+         // Determine base amount eligible to reimburse
+         $latestProcessedOrderItem = $this->latestProcessedOrderItem();
+diff --git a/tests/BaseTestCase.php b/tests/BaseTestCase.php
+index 0e5f41b..5709a80 100644
+--- a/tests/BaseTestCase.php
++++ b/tests/BaseTestCase.php
+@@ -374,7 +374,7 @@ protected function assertMoney(int $value, string $currency, Money $money)
+     {
+         $this->assertEquals($currency, $money->getCurrency()->getCode());
+         $this->assertEquals($money->getAmount(), $value);
+-        $this->assertTrue(money($value, $currency)->equals($money));
++        $this->assertTrue(mollie_money($value, $currency)->equals($money));
+     }
+ 
+     /**
+diff --git a/tests/CashierTest.php b/tests/CashierTest.php
+index 75026c1..3c94e5a 100644
+--- a/tests/CashierTest.php
++++ b/tests/CashierTest.php
+@@ -302,8 +302,8 @@ public function canSwapSubscriptionPlanAndReimburseUnusedTime()
+     /** @test */
+     public function testFormatAmount()
+     {
+-        $this->assertEquals('1.000,00 €', Cashier::formatAmount(money(100000, 'EUR')));
+-        $this->assertEquals('-9.123,45 €', Cashier::formatAmount(money(-912345, 'EUR')));
++        $this->assertEquals('1.000,00 €', Cashier::formatAmount(mollie_money(100000, 'EUR')));
++        $this->assertEquals('-9.123,45 €', Cashier::formatAmount(mollie_money(-912345, 'EUR')));
+     }
+ 
+     /**
+@@ -415,14 +415,14 @@ protected function withMockedGetMollieMandate($attributes = [[
+     protected function withMockedGetMollieMethodMinimumAmount($times = 1): void
+     {
+         $this->mock(GetMollieMethodMinimumAmount::class, function ($mock) use ($times) {
+-            return $mock->shouldReceive('execute')->with('directdebit', 'EUR')->times($times)->andReturn(money(100, 'EUR'));
++            return $mock->shouldReceive('execute')->with('directdebit', 'EUR')->times($times)->andReturn(mollie_money(100, 'EUR'));
+         });
+     }
+ 
+     protected function withMockedGetMollieMethodMaximumAmount($times = 1): void
+     {
+         $this->mock(GetMollieMethodMaximumAmount::class, function ($mock) use ($times) {
+-            return $mock->shouldReceive('execute')->with('directdebit', 'EUR')->times($times)->andReturn(money(30000, 'EUR'));
++            return $mock->shouldReceive('execute')->with('directdebit', 'EUR')->times($times)->andReturn(mollie_money(30000, 'EUR'));
+         });
+     }
+ 
+diff --git a/tests/Charge/FirstPaymentChargeBuilderTest.php b/tests/Charge/FirstPaymentChargeBuilderTest.php
+index 5262106..fa44b13 100644
+--- a/tests/Charge/FirstPaymentChargeBuilderTest.php
++++ b/tests/Charge/FirstPaymentChargeBuilderTest.php
+@@ -35,12 +35,12 @@ public function redirectToCheckoutResponse()
+         $this->assertEquals(0, $owner->orders()->count());
+ 
+         $item = new \Laravel\Cashier\Charge\ChargeItemBuilder($owner);
+-        $item->unitPrice(money(100, 'EUR'));
++        $item->unitPrice(mollie_money(100, 'EUR'));
+         $item->description('Test Item');
+         $chargeItem = $item->make();
+ 
+         $item2 = new \Laravel\Cashier\Charge\ChargeItemBuilder($owner);
+-        $item2->unitPrice(money(200, 'EUR'));
++        $item2->unitPrice(mollie_money(200, 'EUR'));
+         $item2->description('Test Item 2');
+         $chargeItem2 = $item2->make();
+ 
+diff --git a/tests/FirstPayment/Actions/AddBalanceTest.php b/tests/FirstPayment/Actions/AddBalanceTest.php
+index aa76c57..03e147d 100644
+--- a/tests/FirstPayment/Actions/AddBalanceTest.php
++++ b/tests/FirstPayment/Actions/AddBalanceTest.php
+@@ -16,7 +16,7 @@ public function canGetPayload()
+         $this->withPackageMigrations();
+         $action = new AddBalance(
+             $this->getMandatedUser(),
+-            money(1000, 'EUR'),
++            mollie_money(1000, 'EUR'),
+             1,
+             'Adding some test balance'
+         );
+@@ -64,7 +64,7 @@ public function canExecute()
+ 
+         $action = new AddBalance(
+             $user,
+-            money(1000, 'EUR'),
++            mollie_money(1000, 'EUR'),
+             1,
+             'Adding some test balance'
+         );
+diff --git a/tests/FirstPayment/Actions/AddGenericOrderItemTest.php b/tests/FirstPayment/Actions/AddGenericOrderItemTest.php
+index 1484bdc..2f0d35c 100644
+--- a/tests/FirstPayment/Actions/AddGenericOrderItemTest.php
++++ b/tests/FirstPayment/Actions/AddGenericOrderItemTest.php
+@@ -17,7 +17,7 @@ public function canGetPayload()
+ 
+         $action = new AddGenericOrderItem(
+             $this->getMandatedUser(true, ['tax_percentage' => 20]),
+-            money(5, 'EUR'),
++            mollie_money(5, 'EUR'),
+             1,
+             'Adding a test order item'
+         );
+@@ -82,7 +82,7 @@ public function canExecute()
+ 
+         $action = new AddGenericOrderItem(
+             $user,
+-            money(5, 'EUR'),
++            mollie_money(5, 'EUR'),
+             1,
+             'Adding a test order item'
+         );
+diff --git a/tests/FirstPayment/FirstPaymentBuilderTest.php b/tests/FirstPayment/FirstPaymentBuilderTest.php
+index ab972a5..652a404 100644
+--- a/tests/FirstPayment/FirstPaymentBuilderTest.php
++++ b/tests/FirstPayment/FirstPaymentBuilderTest.php
+@@ -46,13 +46,13 @@ public function canBuildPayload()
+         $builder->inOrderTo([
+             new AddBalance(
+                 $owner,
+-                money(500, 'EUR'),
++                mollie_money(500, 'EUR'),
+                 1,
+                 'Test add balance 1'
+             ),
+             new AddBalance(
+                 $owner,
+-                money(500, 'EUR'),
++                mollie_money(500, 'EUR'),
+                 1,
+                 'Test add balance 2'
+             ),
+@@ -99,13 +99,13 @@ public function createsMolliePayment()
+         $builder->inOrderTo([
+             new AddBalance(
+                 $owner,
+-                money(500, 'EUR'),
++                mollie_money(500, 'EUR'),
+                 1,
+                 'Test add balance 1'
+             ),
+             new AddBalance(
+                 $owner,
+-                money(500, 'EUR'),
++                mollie_money(500, 'EUR'),
+                 1,
+                 'Test add balance 2'
+             ),
+@@ -187,7 +187,7 @@ public function parsesRedirectUrlPaymentIdUponPaymentCreation()
+         });
+ 
+         $payment = $builder->inOrderTo([
+-            new AddGenericOrderItem($owner, money(100, 'EUR'), 1, 'Parse redirectUrl test'),
++            new AddGenericOrderItem($owner, mollie_money(100, 'EUR'), 1, 'Parse redirectUrl test'),
+         ])->create();
+ 
+         $this->assertEquals('https://www.example.com/tr_unique_id', $payment->redirectUrl);
+@@ -208,13 +208,13 @@ public function storesLocalPaymentRecord()
+         $builder->inOrderTo([
+             new AddBalance(
+                 $owner,
+-                money(500, 'EUR'),
++                mollie_money(500, 'EUR'),
+                 1,
+                 'Test add balance 1'
+             ),
+             new AddBalance(
+                 $owner,
+-                money(500, 'EUR'),
++                mollie_money(500, 'EUR'),
+                 1,
+                 'Test add balance 2'
+             ),
+diff --git a/tests/Helpers/HelpersTest.php b/tests/Helpers/HelpersTest.php
+index 848a784..32738fe 100644
+--- a/tests/Helpers/HelpersTest.php
++++ b/tests/Helpers/HelpersTest.php
+@@ -10,7 +10,7 @@ class HelpersTest extends TestCase
+     /** @test */
+     public function testMoney()
+     {
+-        $money = money(1234, 'EUR');
++        $money = mollie_money(1234, 'EUR');
+ 
+         $this->assertInstanceOf(Money::class, $money);
+         $this->assertTrue(Money::EUR(1234)->equals($money));
+diff --git a/tests/ManageSubscriptionTest.php b/tests/ManageSubscriptionTest.php
+index 23a21b1..32ff904 100644
+--- a/tests/ManageSubscriptionTest.php
++++ b/tests/ManageSubscriptionTest.php
+@@ -341,14 +341,14 @@ protected function withMockedGetMollieMandate($attributes = [[
+     protected function withMockedGetMollieMethodMinimumAmount($times = 1): void
+     {
+         $this->mock(GetMollieMethodMinimumAmount::class, function ($mock) use ($times) {
+-            return $mock->shouldReceive('execute')->with('directdebit', 'EUR')->times($times)->andReturn(money(100, 'EUR'));
++            return $mock->shouldReceive('execute')->with('directdebit', 'EUR')->times($times)->andReturn(mollie_money(100, 'EUR'));
+         });
+     }
+ 
+     protected function withMockedGetMollieMethodMaximumAmount($times = 1): void
+     {
+         $this->mock(GetMollieMethodMaximumAmount::class, function ($mock) use ($times) {
+-            return $mock->shouldReceive('execute')->with('directdebit', 'EUR')->times($times)->andReturn(money(30000, 'EUR'));
++            return $mock->shouldReceive('execute')->with('directdebit', 'EUR')->times($times)->andReturn(mollie_money(30000, 'EUR'));
+         });
+     }
+ 
+diff --git a/tests/Order/InvoiceTest.php b/tests/Order/InvoiceTest.php
+index d707709..3298d84 100644
+--- a/tests/Order/InvoiceTest.php
++++ b/tests/Order/InvoiceTest.php
+@@ -130,7 +130,7 @@ public function canSetStartingBalance()
+         $this->assertMoneyEURCents(0, $invoice->rawStartingBalance());
+         $this->assertEquals('0,00 €', $invoice->startingBalance());
+ 
+-        $invoice = $invoice->setStartingBalance(money(1525, 'EUR'));
++        $invoice = $invoice->setStartingBalance(mollie_money(1525, 'EUR'));
+         $this->assertTrue($invoice->hasStartingBalance());
+         $this->assertMoneyEURCents(1525, $invoice->rawStartingBalance());
+         $this->assertEquals('15,25 €', $invoice->startingBalance());
+@@ -143,7 +143,7 @@ public function canSetCompletedBalance()
+         $this->assertMoneyEURCents(0, $invoice->rawCompletedBalance());
+         $this->assertEquals('0,00 €', $invoice->completedBalance());
+ 
+-        $invoice = $invoice->setCompletedBalance(money(1525, 'EUR'));
++        $invoice = $invoice->setCompletedBalance(mollie_money(1525, 'EUR'));
+         $this->assertMoneyEURCents(1525, $invoice->rawCompletedBalance());
+         $this->assertEquals('15,25 €', $invoice->completedBalance());
+     }
+@@ -155,7 +155,7 @@ public function canSetUsedBalance()
+         $this->assertMoneyEURCents(0, $invoice->rawUsedBalance());
+         $this->assertEquals('0,00 €', $invoice->usedBalance());
+ 
+-        $invoice = $invoice->setUsedBalance(money(1525, 'EUR'));
++        $invoice = $invoice->setUsedBalance(mollie_money(1525, 'EUR'));
+         $this->assertMoneyEURCents(1525, $invoice->rawUsedBalance());
+         $this->assertEquals('15,25 €', $invoice->usedBalance());
+     }
+diff --git a/tests/Order/OrderTest.php b/tests/Order/OrderTest.php
+index a915c72..4917ea9 100644
+--- a/tests/Order/OrderTest.php
++++ b/tests/Order/OrderTest.php
+@@ -69,14 +69,14 @@ public function canCreateFromOrderItemsAndProcess()
+             return $mock->shouldReceive('execute')
+                 ->with('directdebit', 'EUR')
+                 ->once()
+-                ->andReturn(money(10, 'EUR'));
++                ->andReturn(mollie_money(10, 'EUR'));
+         });
+ 
+         $this->mock(GetMollieMethodMaximumAmount::class, function ($mock) {
+             return $mock->shouldReceive('execute')
+                 ->with('directdebit', 'EUR')
+                 ->once()
+-                ->andReturn(money(30000, 'EUR'));
++                ->andReturn(mollie_money(30000, 'EUR'));
+         });
+ 
+         $this->mock(CreateMolliePayment::class, function ($mock) {
+@@ -191,7 +191,7 @@ public function handlesOwnerBalance()
+         // Owner with 15 euro balance
+         $user = $this
+             ->getMandatedUser(true, ['id' => 2])
+-            ->addCredit(money(1500, 'EUR'));
++            ->addCredit(mollie_money(1500, 'EUR'));
+ 
+         $this->assertMoneyEURCents(1500, $user->credit('EUR')->money());
+ 
+@@ -338,14 +338,14 @@ public function createsAMolliePaymentIfTotalDueIsLargerThanMolliesMinimum()
+             return $mock->shouldReceive('execute')
+                 ->with('directdebit', 'EUR')
+                 ->once()
+-                ->andReturn(money(10, 'EUR'));
++                ->andReturn(mollie_money(10, 'EUR'));
+         });
+ 
+         $this->mock(GetMollieMethodMaximumAmount::class, function ($mock) {
+             return $mock->shouldReceive('execute')
+                 ->with('directdebit', 'EUR')
+                 ->once()
+-                ->andReturn(money(30000, 'EUR'));
++                ->andReturn(mollie_money(30000, 'EUR'));
+         });
+ 
+         $this->mock(CreateMolliePayment::class, function ($mock) {
+@@ -416,7 +416,7 @@ public function createsAMolliePaymentIfMolliesMaximumIsNull()
+             return $mock->shouldReceive('execute')
+                 ->with('directdebit', 'EUR')
+                 ->once()
+-                ->andReturn(money(10, 'EUR'));
++                ->andReturn(mollie_money(10, 'EUR'));
+         });
+ 
+         $this->mock(GetMollieMethodMaximumAmount::class, function ($mock) {
+@@ -494,14 +494,14 @@ public function notCreatesAMolliePaymentIfTotalDueIsGreathenThanMolliesMaximum()
+             return $mock->shouldReceive('execute')
+                 ->with('directdebit', 'EUR')
+                 ->once()
+-                ->andReturn(money(1, 'EUR'));
++                ->andReturn(mollie_money(1, 'EUR'));
+         });
+ 
+         $this->mock(GetMollieMethodMaximumAmount::class, function ($mock) {
+             return $mock->shouldReceive('execute')
+                 ->with('directdebit', 'EUR')
+                 ->once()
+-                ->andReturn(money(10, 'EUR'));
++                ->andReturn(mollie_money(10, 'EUR'));
+         });
+ 
+         $user = $this->getMandatedUser(true, [
+@@ -603,14 +603,14 @@ public function canRetryAFailedOrderNow()
+             return $mock->shouldReceive('execute')
+                 ->with('directdebit', 'EUR')
+                 ->once()
+-                ->andReturn(money(10, 'EUR'));
++                ->andReturn(mollie_money(10, 'EUR'));
+         });
+ 
+         $this->mock(GetMollieMethodMaximumAmount::class, function ($mock) {
+             return $mock->shouldReceive('execute')
+                 ->with('directdebit', 'EUR')
+                 ->once()
+-                ->andReturn(money(30000, 'EUR'));
++                ->andReturn(mollie_money(30000, 'EUR'));
+         });
+ 
+         $this->mock(CreateMolliePayment::class, function ($mock) {
+@@ -691,14 +691,14 @@ public function storesOwnerCreditIfTotalIsPositiveAndSmallerThanMolliesMinimum()
+             return $mock->shouldReceive('execute')
+                 ->with('directdebit', 'EUR')
+                 ->once()
+-                ->andReturn(money(100, 'EUR'));
++                ->andReturn(mollie_money(100, 'EUR'));
+         });
+ 
+         $this->mock(GetMollieMethodMaximumAmount::class, function ($mock) {
+             return $mock->shouldReceive('execute')
+                 ->with('directdebit', 'EUR')
+                 ->once()
+-                ->andReturn(money(30000, 'EUR'));
++                ->andReturn(mollie_money(30000, 'EUR'));
+         });
+ 
+         $user = $this->getMandatedUser(true, [
+@@ -747,7 +747,7 @@ public function storesOwnerCreditIfTotalDueIsNegativeAndOwnerHasActiveSubscripti
+             'currency' => 'EUR',
+         ]));
+         $this->assertFalse($order->isProcessed());
+-        $user->addCredit(money(1025, 'EUR'));
++        $user->addCredit(mollie_money(1025, 'EUR'));
+         $this->assertTrue($user->hasCredit('EUR'));
+         $this->assertEquals(1025, $user->credit('EUR')->value);
+         $this->assertMoneyEURCents(1025, $user->credit('EUR')->money());
+@@ -856,7 +856,7 @@ public function canCreateOrderFromOrderItemsWhenTotalIsPaidByCreditAndOwnerHasNo
+         Carbon::setTestNow(Carbon::parse('2018-01-01'));
+         Event::fake();
+         $user = factory(User::class)->create(); // user without subscription/mandate
+-        $user->addCredit(money(29998, 'EUR'));
++        $user->addCredit(mollie_money(29998, 'EUR'));
+ 
+         factory(Cashier::$orderItemModel, 2)->create([
+             'orderable_type' => null,
+@@ -980,7 +980,7 @@ public function findByMolliePaymentIdOrFailWorks()
+     public function generateNewExampleInvoice()
+     {
+         $user = factory(User::class)->create(['extra_billing_information' => 'Some dummy extra billing information']);
+-        $user->addCredit(money(500, 'EUR'));
++        $user->addCredit(mollie_money(500, 'EUR'));
+         $items = factory(Cashier::$orderItemModel, 2)->states(['unlinked', 'EUR'])->create([
+             'owner_id' => $user->id,
+             'owner_type' => User::class,
+diff --git a/tests/SwapSubscriptionPlanTest.php b/tests/SwapSubscriptionPlanTest.php
+index 39aa432..fa36279 100644
+--- a/tests/SwapSubscriptionPlanTest.php
++++ b/tests/SwapSubscriptionPlanTest.php
+@@ -254,14 +254,14 @@ protected function withMockedGetMollieMandate($attributes = [[
+     protected function withMockedGetMollieMethodMinimumAmount($times = 1): void
+     {
+         $this->mock(GetMollieMethodMinimumAmount::class, function ($mock) use ($times) {
+-            return $mock->shouldReceive('execute')->with('directdebit', 'EUR')->times($times)->andReturn(money(100, 'EUR'));
++            return $mock->shouldReceive('execute')->with('directdebit', 'EUR')->times($times)->andReturn(mollie_money(100, 'EUR'));
+         });
+     }
+ 
+     protected function withMockedGetMollieMethodMaximumAmount($times = 1): void
+     {
+         $this->mock(GetMollieMethodMaximumAmount::class, function ($mock) use ($times) {
+-            return $mock->shouldReceive('execute')->with('directdebit', 'EUR')->times($times)->andReturn(money(30000, 'EUR'));
++            return $mock->shouldReceive('execute')->with('directdebit', 'EUR')->times($times)->andReturn(mollie_money(30000, 'EUR'));
+         });
+     }
+ 

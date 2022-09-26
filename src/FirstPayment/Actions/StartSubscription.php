@@ -215,7 +215,7 @@ class StartSubscription extends BaseAction implements SubscriptionConfigurator
     {
         $this->trialDays = $trialDays;
         $this->builder()->trialDays($trialDays);
-        $this->unitPrice = money(0, $this->getCurrency());
+        $this->unitPrice = mollie_money(0, $this->getCurrency());
 
         return $this;
     }
@@ -230,7 +230,7 @@ class StartSubscription extends BaseAction implements SubscriptionConfigurator
     {
         $this->trialUntil = $trialUntil;
         $this->builder()->trialUntil($trialUntil);
-        $this->unitPrice = money(0, $this->getCurrency());
+        $this->unitPrice = mollie_money(0, $this->getCurrency());
 
         return $this;
     }

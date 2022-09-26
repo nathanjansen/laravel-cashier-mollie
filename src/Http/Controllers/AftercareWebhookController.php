@@ -80,7 +80,7 @@ class AftercareWebhookController extends BaseWebhookController
             // Update the locally known refunded amount
             $amountRefunded = $molliePayment->amountRefunded
                 ? mollie_object_to_money($molliePayment->amountRefunded)
-                : money(0, $molliePayment->amount->currency);
+                : mollie_money(0, $molliePayment->amount->currency);
 
             $localPayment = Cashier::$paymentModel::findByPaymentId($molliePayment->id);
             $localPayment->update(['amount_refunded' => (int) $amountRefunded->getAmount()]);

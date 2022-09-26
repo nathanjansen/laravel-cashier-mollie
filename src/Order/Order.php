@@ -208,7 +208,7 @@ class Order extends Model
                 return $this->handlePaymentFailedDueToInvalidMandate();
             }
 
-            $totalDue = money($this->total_due, $this->currency);
+            $totalDue = mollie_money($this->total_due, $this->currency);
 
             if ($maximumPaymentAmount && $totalDue->greaterThan($maximumPaymentAmount)) {
                 $this->items->each(function (OrderItem $item) {
@@ -231,7 +231,7 @@ class Order extends Model
                     $this->mollie_payment_id = null;
 
                     // Add credit to the owner's balance
-                    $credit = Cashier::$creditModel::addAmountForOwner($owner, money(-($this->total_due), $this->currency));
+                    $credit = Cashier::$creditModel::addAmountForOwner($owner, mollie_money(-($this->total_due), $this->currency));
 
                     if (! $owner->hasActiveSubscriptionWithCurrency($this->currency)) {
                         Event::dispatch(new BalanceTurnedStale($credit));
@@ -696,7 +696,7 @@ class Order extends Model
             $this->guardMandate($mandate);
             $minimumPaymentAmount = app(MinimumPayment::class)::forMollieMandate($mandate, $this->getCurrency());
         } else {
-            $minimumPaymentAmount = money(0, $this->getCurrency());
+            $minimumPaymentAmount = mollie_money(0, $this->getCurrency());
         }
 
         return $minimumPaymentAmount;
@@ -715,7 +715,7 @@ class Order extends Model
 
             $maximumPaymentAmount = app(MaximumPayment::class)::forMollieMandate($mandate, $this->getCurrency());
         } else {
-            $maximumPaymentAmount = money(0, $this->getCurrency());
+            $maximumPaymentAmount = mollie_money(0, $this->getCurrency());
         }
 
         return $maximumPaymentAmount;

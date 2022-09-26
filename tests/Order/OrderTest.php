@@ -69,14 +69,14 @@ class OrderTest extends BaseTestCase
             return $mock->shouldReceive('execute')
                 ->with('directdebit', 'EUR')
                 ->once()
-                ->andReturn(money(10, 'EUR'));
+                ->andReturn(mollie_money(10, 'EUR'));
         });
 
         $this->mock(GetMollieMethodMaximumAmount::class, function ($mock) {
             return $mock->shouldReceive('execute')
                 ->with('directdebit', 'EUR')
                 ->once()
-                ->andReturn(money(30000, 'EUR'));
+                ->andReturn(mollie_money(30000, 'EUR'));
         });
 
         $this->mock(CreateMolliePayment::class, function ($mock) {
@@ -191,7 +191,7 @@ class OrderTest extends BaseTestCase
         // Owner with 15 euro balance
         $user = $this
             ->getMandatedUser(true, ['id' => 2])
-            ->addCredit(money(1500, 'EUR'));
+            ->addCredit(mollie_money(1500, 'EUR'));
 
         $this->assertMoneyEURCents(1500, $user->credit('EUR')->money());
 
@@ -338,14 +338,14 @@ class OrderTest extends BaseTestCase
             return $mock->shouldReceive('execute')
                 ->with('directdebit', 'EUR')
                 ->once()
-                ->andReturn(money(10, 'EUR'));
+                ->andReturn(mollie_money(10, 'EUR'));
         });
 
         $this->mock(GetMollieMethodMaximumAmount::class, function ($mock) {
             return $mock->shouldReceive('execute')
                 ->with('directdebit', 'EUR')
                 ->once()
-                ->andReturn(money(30000, 'EUR'));
+                ->andReturn(mollie_money(30000, 'EUR'));
         });
 
         $this->mock(CreateMolliePayment::class, function ($mock) {
@@ -416,7 +416,7 @@ class OrderTest extends BaseTestCase
             return $mock->shouldReceive('execute')
                 ->with('directdebit', 'EUR')
                 ->once()
-                ->andReturn(money(10, 'EUR'));
+                ->andReturn(mollie_money(10, 'EUR'));
         });
 
         $this->mock(GetMollieMethodMaximumAmount::class, function ($mock) {
@@ -494,14 +494,14 @@ class OrderTest extends BaseTestCase
             return $mock->shouldReceive('execute')
                 ->with('directdebit', 'EUR')
                 ->once()
-                ->andReturn(money(1, 'EUR'));
+                ->andReturn(mollie_money(1, 'EUR'));
         });
 
         $this->mock(GetMollieMethodMaximumAmount::class, function ($mock) {
             return $mock->shouldReceive('execute')
                 ->with('directdebit', 'EUR')
                 ->once()
-                ->andReturn(money(10, 'EUR'));
+                ->andReturn(mollie_money(10, 'EUR'));
         });
 
         $user = $this->getMandatedUser(true, [
@@ -603,14 +603,14 @@ class OrderTest extends BaseTestCase
             return $mock->shouldReceive('execute')
                 ->with('directdebit', 'EUR')
                 ->once()
-                ->andReturn(money(10, 'EUR'));
+                ->andReturn(mollie_money(10, 'EUR'));
         });
 
         $this->mock(GetMollieMethodMaximumAmount::class, function ($mock) {
             return $mock->shouldReceive('execute')
                 ->with('directdebit', 'EUR')
                 ->once()
-                ->andReturn(money(30000, 'EUR'));
+                ->andReturn(mollie_money(30000, 'EUR'));
         });
 
         $this->mock(CreateMolliePayment::class, function ($mock) {
@@ -691,14 +691,14 @@ class OrderTest extends BaseTestCase
             return $mock->shouldReceive('execute')
                 ->with('directdebit', 'EUR')
                 ->once()
-                ->andReturn(money(100, 'EUR'));
+                ->andReturn(mollie_money(100, 'EUR'));
         });
 
         $this->mock(GetMollieMethodMaximumAmount::class, function ($mock) {
             return $mock->shouldReceive('execute')
                 ->with('directdebit', 'EUR')
                 ->once()
-                ->andReturn(money(30000, 'EUR'));
+                ->andReturn(mollie_money(30000, 'EUR'));
         });
 
         $user = $this->getMandatedUser(true, [
@@ -747,7 +747,7 @@ class OrderTest extends BaseTestCase
             'currency' => 'EUR',
         ]));
         $this->assertFalse($order->isProcessed());
-        $user->addCredit(money(1025, 'EUR'));
+        $user->addCredit(mollie_money(1025, 'EUR'));
         $this->assertTrue($user->hasCredit('EUR'));
         $this->assertEquals(1025, $user->credit('EUR')->value);
         $this->assertMoneyEURCents(1025, $user->credit('EUR')->money());
@@ -856,7 +856,7 @@ class OrderTest extends BaseTestCase
         Carbon::setTestNow(Carbon::parse('2018-01-01'));
         Event::fake();
         $user = factory(User::class)->create(); // user without subscription/mandate
-        $user->addCredit(money(29998, 'EUR'));
+        $user->addCredit(mollie_money(29998, 'EUR'));
 
         factory(Cashier::$orderItemModel, 2)->create([
             'orderable_type' => null,
@@ -980,7 +980,7 @@ class OrderTest extends BaseTestCase
     public function generateNewExampleInvoice()
     {
         $user = factory(User::class)->create(['extra_billing_information' => 'Some dummy extra billing information']);
-        $user->addCredit(money(500, 'EUR'));
+        $user->addCredit(mollie_money(500, 'EUR'));
         $items = factory(Cashier::$orderItemModel, 2)->states(['unlinked', 'EUR'])->create([
             'owner_id' => $user->id,
             'owner_type' => User::class,

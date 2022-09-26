@@ -23,7 +23,7 @@ if (! function_exists('object_to_array_recursive')) {
     }
 }
 
-if (! function_exists('money')) {
+if (! function_exists('mollie_money')) {
     /**
      * Create a Money object from a Mollie Amount array.
      *
@@ -31,7 +31,7 @@ if (! function_exists('money')) {
      * @param  string  $currency
      * @return \Money\Money
      */
-    function money(int $value, string $currency)
+    function mollie_money(int $value, string $currency)
     {
         return new Money($value, new Currency($currency));
     }

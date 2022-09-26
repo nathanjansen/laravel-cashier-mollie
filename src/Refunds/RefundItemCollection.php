@@ -23,7 +23,7 @@ class RefundItemCollection extends Collection
 
     public function getTotal(): Money
     {
-        return money($this->sum('total'), $this->getCurrency());
+        return mollie_money($this->sum('total'), $this->getCurrency());
     }
 
     public function getCurrency(): string
